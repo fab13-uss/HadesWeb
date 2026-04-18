@@ -7,6 +7,7 @@ RUN apt-get install -y libpng-dev
 RUN apt-get install -y libjpeg62-turbo-dev
 RUN apt-get install -y libfreetype6-dev
 RUN apt-get install -y libzip-dev
+RUN apt-get install -y libonig-dev
 RUN apt-get install -y zip unzip git curl
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg
