@@ -1,8 +1,4 @@
-FROM php:8.3-apache
-
-RUN a2enmod rewrite
-RUN a2dismod mpm_event
-RUN a2enmod mpm_prefork
+FROM php:8.3-cli
 
 RUN apt-get update
 RUN apt-get install -y libpq-dev
@@ -24,13 +20,11 @@ RUN docker-php-ext-install opcache
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-RUN sed -i 's|/var/www/html|/app/public|g' /etc/apache2/sites-available/000-default.conf
-
 WORKDIR /app
 COPY . .
 
 RUN composer install --optimize-autoloader --no-scripts --no-interaction
 
-EXPOSE 80
+EXPOSE 8080
 
-CMD php artisan config:clear && php artisan migrate --force && apache2-foreground
+CMD ["/bin/sh", "-c", "php artisan config:clear && php artisan migrate --force && php -S 0.0.0.0:8080 -t public public/index.php"]
