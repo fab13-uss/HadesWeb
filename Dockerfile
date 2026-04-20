@@ -1,6 +1,8 @@
 FROM php:8.3-apache
 
 RUN a2enmod rewrite
+RUN a2dismod mpm_event
+RUN a2enmod mpm_prefork
 
 RUN apt-get update
 RUN apt-get install -y libpq-dev
