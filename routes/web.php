@@ -1,58 +1,31 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\DB;
-use App\Livewire\MigracionDashboard;
 use App\Livewire\Consultas\ConsultasDashboard;
-use App\Livewire\Consultas\MatriculaHistorica;
+use App\Livewire\GestionUsuarios;
+use App\Livewire\MigracionDashboard;
+use Illuminate\Support\Facades\Route;
 
+// Redirigir / al login
+Route::get('/', fn () => redirect()->route('login'));
 
+// Bloquear registro público
+Route::get('/register',  fn () => abort(404));
+Route::post('/register', fn () => abort(404));
 
-Route::view('/', 'welcome')->name('home');
+// Rutas autenticadas
+Route::middleware(['auth', 'activo'])->group(function () {
 
-Route::middleware(['auth', 'verified'])->group(function () {
+    // Consultas — accesible para todos los roles
+    Route::get('/consultas', ConsultasDashboard::class)->name('consultas');
 
-    Route::view('dashboard', 'dashboard')->name('dashboard');
-
-    Route::get('/consultas', ConsultasDashboard::class)
-        ->name('consultas');
-
-    Route::get('/consultas/matricula', MatriculaHistorica::class)
-        ->name('consultas.matricula');
-
+    // Migraciones — solo técnicos
     Route::get('/migraciones', MigracionDashboard::class)
+        ->middleware('tecnico')
         ->name('migraciones');
 
-    Route::get('/migrar-test', function () {
-
-    // 🔴 Limpiar tabla antes de insertar
-    DB::table('localizaciones_copia')->truncate();
-
-    $datos = DB::connection('nacion')
-        ->table('localizacion')
-        ->selectRaw("
-            substring(cueanexo from 1 for 7) as cue,
-            substring(cueanexo from 8) as anexo,
-            nombre
-        ")
-        ->limit(10)
-        ->get();
-
-    foreach ($datos as $fila) {
-        DB::table('localizaciones_copia')->insert([
-            'cue' => $fila->cue,
-            'anexo' => $fila->anexo,
-            'nombre' => $fila->nombre,
-        ]);
-    }
-
-    return "Migración OK";
-    });
-    
+    // Gestión de usuarios — solo técnicos
+    Route::get('/usuarios', GestionUsuarios::class)
+        ->middleware('tecnico')
+        ->name('usuarios');
 
 });
-
-
-
-
-require __DIR__.'/settings.php';

@@ -15,4 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })->create()
+    
+    ->withMiddleware(function (Middleware $middleware) {
+    $middleware->alias([
+        'tecnico' => \App\Http\Middleware\TecnicoMiddleware::class,
+        'activo'  => \App\Http\Middleware\ActivoMiddleware::class,
+    ]);
+    })
+    ;
