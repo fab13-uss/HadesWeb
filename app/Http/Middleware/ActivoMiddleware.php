@@ -9,8 +9,10 @@ class ActivoMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        if (auth()->check() && !auth()->user()->estaActivo()) {
-            auth()->logout();
+        /** @var \Illuminate\Auth\Guard $auth */
+        $auth = auth();
+        if ($auth->check() && !$auth->user()->estaActivo()) {
+            $auth->logout();
             return redirect()->route('login')
                 ->withErrors(['username' => 'Tu cuenta está desactivada. Contactá a un técnico.']);
         }
