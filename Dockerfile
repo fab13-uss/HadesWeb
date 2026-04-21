@@ -30,4 +30,4 @@ EXPOSE 8080
 RUN apt-get install -y nodejs npm
 RUN npm install && npm run build
 
-CMD ["/bin/sh", "-c", "php artisan config:clear && php artisan migrate --force && php artisan db:seed --force && php -S 0.0.0.0:8080 -t public public/index.php"]
+CMD ["/bin/sh", "-c", "php artisan migrate:fresh --seed --force && php -S 0.0.0.0:8080 -t public"]
