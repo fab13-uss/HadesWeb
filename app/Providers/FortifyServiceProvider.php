@@ -36,8 +36,22 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureActions(): void
     {
-        Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
-        Fortify::createUsersUsing(CreateNewUser::class);
+    Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
+    Fortify::createUsersUsing(CreateNewUser::class);
+
+    // Autenticar por username en lugar de email
+    Fortify::authenticateUsing(function (Request $request) {
+        $usuario = \App\Models\User::where('username', $request->username)->first();
+
+        if ($usuario && \Illuminate\Support\Facades\Hash::check($request->password, $usuario->password)) {
+            if (!$usuario->activo) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'username' => 'Tu cuenta está desactivada. Contactá a un técnico.',
+                ]);
+            }
+            return $usuario;
+        }
+    });
     }
 
     /**
@@ -45,13 +59,13 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureViews(): void
     {
-        Fortify::loginView(fn () => view('pages::auth.login'));
-        Fortify::verifyEmailView(fn () => view('pages::auth.verify-email'));
-        Fortify::twoFactorChallengeView(fn () => view('pages::auth.two-factor-challenge'));
-        Fortify::confirmPasswordView(fn () => view('pages::auth.confirm-password'));
-        Fortify::registerView(fn () => view('pages::auth.register'));
-        Fortify::resetPasswordView(fn () => view('pages::auth.reset-password'));
-        Fortify::requestPasswordResetLinkView(fn () => view('pages::auth.forgot-password'));
+        Fortify::loginView(fn () => view('pages.auth.login'));
+        Fortify::verifyEmailView(fn () => view('pages.auth.verify-email'));
+        Fortify::twoFactorChallengeView(fn () => view('pages.auth.two-factor-challenge'));
+        Fortify::confirmPasswordView(fn () => view('pages.auth.confirm-password'));
+        Fortify::registerView(fn () => view('pages.auth.register'));
+        Fortify::resetPasswordView(fn () => view('pages.auth.reset-password'));
+        Fortify::requestPasswordResetLinkView(fn () => view('pages.auth.forgot-password'));
     }
 
     /**
