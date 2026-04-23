@@ -1,2 +1,3 @@
 // resources/js/app.js
-console.log('App loaded');
+import '../css/app.css';
+import '../../vendor/livewire/flux/dist/flux.js';
