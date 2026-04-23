@@ -15,6 +15,8 @@ Route::post('/register', fn () => abort(404));
 // Rutas autenticadas
 Route::middleware(['auth', 'activo'])->group(function () {
 
+     Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
+
     // Consultas — accesible para todos los roles
     Route::get('/consultas', ConsultasDashboard::class)->name('consultas');
 
