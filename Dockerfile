@@ -7,7 +7,7 @@ RUN apt-get install -y libjpeg62-turbo-dev
 RUN apt-get install -y libfreetype6-dev
 RUN apt-get install -y libzip-dev
 RUN apt-get install -y libonig-dev
-RUN apt-get install -y zip unzip git curl
+RUN apt-get install -y zip unzip git curl nodejs npm
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 RUN docker-php-ext-install pdo
@@ -24,10 +24,8 @@ WORKDIR /app
 COPY . .
 
 RUN composer install --optimize-autoloader --no-scripts --no-interaction
+RUN npm install && npm run build
 
 EXPOSE 8080
-
-RUN apt-get install -y nodejs npm
-RUN npm install && npm run build
 
 CMD ["/bin/sh", "-c", "php artisan config:clear && php artisan migrate --force && php artisan db:seed --force && php -S 0.0.0.0:8080 -t public public/index.php"]
