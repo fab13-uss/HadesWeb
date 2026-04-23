@@ -24,7 +24,9 @@ WORKDIR /app
 COPY . .
 
 RUN composer install --optimize-autoloader --no-scripts --no-interaction
-RUN npm install && npm run build
+RUN npm install
+RUN npm run build
+RUN ls -R public/build
 
 EXPOSE 8080
 
