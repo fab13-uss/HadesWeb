@@ -40,6 +40,7 @@ RUN npm install
 RUN npm run build
 RUN ls -R public/build
 RUN find public/build -type f
+RUN cat public/build/manifest.json
 
 EXPOSE 8080
 
