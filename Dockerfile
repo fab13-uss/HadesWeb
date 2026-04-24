@@ -39,7 +39,9 @@ RUN npm -v
 RUN npm install
 RUN npm run build
 RUN ls -R public/build
+RUN find public/build -type f
 
 EXPOSE 8080
 
-CMD ["/bin/sh", "-c", "php artisan config:clear && php artisan migrate --force && php artisan db:seed --force && php -S 0.0.0.0:8080 -t public public/index.php"]
+# CMD ["/bin/sh", "-c", "php artisan config:clear && php artisan migrate --force && php artisan db:seed --force && php -S 0.0.0.0:8080 -t public public/index.php"]
+CMD ["sh", "-c", "php artisan config:clear && php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=8080"]
