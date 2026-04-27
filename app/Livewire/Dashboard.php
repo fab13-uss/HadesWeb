@@ -6,8 +6,10 @@ use App\Models\MigracionEtl;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
+#[Layout('components.layouts.app')]
 #[Title('Dashboard')]
 class Dashboard extends Component
 {
