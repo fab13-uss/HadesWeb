@@ -1,5 +1,4 @@
 <x-layouts.app :title="'Dashboard'">
-    <flux:main>
         <div class="p-6 space-y-6">
 
             <div>
@@ -93,5 +92,4 @@
             @endif
 
         </div>
-    </flux:main>
 </x-layouts.app>
