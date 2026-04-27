@@ -5,9 +5,9 @@ use App\Livewire\GestionUsuarios;
 use App\Livewire\MigracionDashboard;
 use App\Livewire\Dashboard;
 use Illuminate\Support\Facades\Route;
+use App\Livewire\Auth\Login;
 
-// Redirigir / al login
-Route::get('/', fn () => redirect()->route('login'));
+Route::get('/', Login::class)->name('login');
 
 // Bloquear registro público
 Route::get('/register',  fn () => abort(404));
