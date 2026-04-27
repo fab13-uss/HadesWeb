@@ -7,7 +7,12 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 
+
+#[Layout('components.layouts.app')]
+#[Title('Gestión de Usuarios')]
 class GestionUsuarios extends Component
 {
     // Modal crear/editar
@@ -186,6 +191,6 @@ class GestionUsuarios extends Component
 
     public function render()
     {
-        return view('livewire.gestion-usuarios')->title('Gestión de Usuarios');
+        return view('livewire.gestion-usuarios');
     }
 }
