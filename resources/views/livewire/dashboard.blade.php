@@ -15,14 +15,14 @@
 
                 <div class="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
                     <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Relevamientos migrados</p>
-                    <p class="text-3xl font-bold text-indigo-600 mt-1">{{ $totalEsquemas }}</p>
+                    <p class="text-3xl font-bold text-indigo-600 mt-1">{{ $this->totalEsquemas }}</p>
                     <p class="text-xs text-gray-400 mt-1">esquemas ra_carga disponibles</p>
                 </div>
 
                 <div class="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4">
                     <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Padrón</p>
                     <p class="text-sm font-medium mt-2">
-                        @if($padronMigrado)
+                        @if($this->padronMigrado)
                             <span class="inline-flex items-center gap-1.5 text-green-600">
                                 <span class="h-2 w-2 rounded-full bg-green-500"></span>
                                 Disponible
@@ -56,7 +56,7 @@
                 <div>
                     <h2 class="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-3">Últimas migraciones</h2>
 
-                    @if($ultimasMigraciones->isEmpty())
+                    @if($this->ultimasMigraciones->isEmpty())
                         <div class="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-8 text-center">
                             <p class="text-sm text-gray-400">Todavía no se realizaron migraciones.</p>
                         </div>
@@ -71,7 +71,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
-                                    @foreach($ultimasMigraciones as $mig)
+                                    @foreach($this->ultimasMigraciones as $mig)
                                         <tr>
                                             <td class="px-4 py-3 font-medium text-gray-900 dark:text-zinc-100">{{ $mig->nombre }}</td>
                                             <td class="px-4 py-3">

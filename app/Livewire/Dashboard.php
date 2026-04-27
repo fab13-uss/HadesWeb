@@ -6,7 +6,9 @@ use App\Models\MigracionEtl;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\Attributes\Title;
 
+#[Title('Dashboard')]
 class Dashboard extends Component
 {
     #[Computed]
@@ -47,6 +49,6 @@ class Dashboard extends Component
 
     public function render()
     {
-        return view('livewire.dashboard')->title('Dashboard');
+        return view('livewire.dashboard');
     }
 }
