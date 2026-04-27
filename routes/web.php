@@ -3,6 +3,7 @@
 use App\Livewire\Consultas\ConsultasDashboard;
 use App\Livewire\GestionUsuarios;
 use App\Livewire\MigracionDashboard;
+use App\Livewire\Dashboard;
 use Illuminate\Support\Facades\Route;
 
 // Redirigir / al login
@@ -15,7 +16,7 @@ Route::post('/register', fn () => abort(404));
 // Rutas autenticadas
 Route::middleware(['auth', 'activo'])->group(function () {
 
-     Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
+    Route::get('/dashboard', Dashboard::class)->name('dashboard');
 
     // Consultas — accesible para todos los roles
     Route::get('/consultas', ConsultasDashboard::class)->name('consultas');
