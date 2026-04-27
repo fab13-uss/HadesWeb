@@ -7,7 +7,11 @@ use App\Models\MigracionEtl;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 
+#[Layout('components.layouts.app')]
+#[Title('ETL — Migraciones')]
 class MigracionDashboard extends Component
 {
     public bool $workerIniciado = false;
@@ -122,6 +126,6 @@ class MigracionDashboard extends Component
 
     public function render()
     {
-        return view('livewire.migracion-dashboard')->title('ETL — Migraciones');
+    return view('livewire.migracion-dashboard');
     }
 }
