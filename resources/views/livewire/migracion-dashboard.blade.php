@@ -52,39 +52,37 @@
     @enderror
 
     {{-- Worker --}}
-    @if($this->hayJobsPendientes())
-        <div class="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 p-5 flex items-center justify-between">
+    @if($this->workerActivo())
+    <div class="rounded-xl border border-green-200 bg-green-50 dark:bg-green-900/20 p-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <span class="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse"></span>
             <div>
-                <p class="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                    Migración en cola
-                </p>
-                <p class="text-xs text-zinc-500 mt-0.5">
-                    Hay jobs pendientes. Iniciá el worker para procesarlos.
-                </p>
+                <p class="text-sm font-medium text-green-800 dark:text-green-300">Worker activo</p>
+                <p class="text-xs text-green-600 dark:text-green-400 mt-0.5">Procesando la cola de migraciones</p>
             </div>
-
-            @if(session('worker'))
-                <span class="flex items-center gap-2 text-sm text-zinc-500">
-                    <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-                    </svg>
-                    Worker corriendo...
-                </span>
-            @else
-                <button
-                    wire:click="iniciarWorker"
-                    wire:loading.attr="disabled"
-                    wire:target="iniciarWorker"
-                    class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition
-                           bg-zinc-900 text-white hover:bg-zinc-700
-                           dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-                >
-                    Iniciar worker
-                </button>
-            @endif
         </div>
-    @endif
+        <button
+            wire:click="detenerWorker"
+            wire:confirm="¿Detener el worker? Las migraciones en curso pueden quedar incompletas."
+            class="rounded-lg px-4 py-2 text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition"
+        >
+            Detener worker
+        </button>
+    </div>
+@else
+    <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 p-4 flex items-center justify-between">
+        <div>
+            <p class="text-sm font-medium text-zinc-800 dark:text-zinc-200">Worker detenido</p>
+            <p class="text-xs text-zinc-500 mt-0.5">Inicialo para procesar migraciones en cola</p>
+        </div>
+        <button
+            wire:click="iniciarWorker"
+            class="rounded-lg px-4 py-2 text-sm font-medium bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 transition"
+        >
+            Iniciar worker
+        </button>
+    </div>
+@endif
 
     {{-- PADRÓN --}}
     <section class="space-y-3">

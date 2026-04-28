@@ -4,18 +4,17 @@ namespace App\Livewire;
 
 use App\Jobs\EjecutarMigracionJob;
 use App\Models\MigracionEtl;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
-use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Livewire\Component;
 
 #[Layout('components.layouts.app')]
 #[Title('ETL — Migraciones')]
 class MigracionDashboard extends Component
 {
-    public bool $workerIniciado = false;
-
     #[Computed]
     public function padron(): ?MigracionEtl
     {
@@ -35,39 +34,37 @@ class MigracionDashboard extends Component
         return MigracionEtl::where('estado', 'ejecutando')->exists();
     }
 
-    public function hayJobsPendientes(): bool
+    public function workerActivo(): bool
     {
-        return DB::table('jobs')->where('queue', 'migraciones')->exists();
-    }
+        $pid = Cache::get('worker_pid');
+        if (!$pid) return false;
 
-    // =========================================================================
-    // Ejecutar migración
-    // =========================================================================
+        if (PHP_OS_FAMILY === 'Linux') {
+            return file_exists("/proc/{$pid}");
+        }
+
+        return false;
+    }
 
     public function ejecutar(int $id): void
     {
-    $migracion = MigracionEtl::findOrFail($id);
+        $migracion = MigracionEtl::findOrFail($id);
 
-    if ($this->hayAlgunaEjecutando()) {
-        $this->addError('general', 'Ya hay una migración en curso. Esperá que termine antes de iniciar otra.');
-        return;
+        if ($this->hayAlgunaEjecutando()) {
+            $this->addError('general', 'Ya hay una migración en curso. Esperá que termine antes de iniciar otra.');
+            return;
+        }
+
+        $migracion->marcarInicio();
+        EjecutarMigracionJob::dispatch($id)->onQueue('migraciones');
+
+        session()->flash('mensaje', "'{$migracion->nombre}' fue enviada a la cola. Iniciá el worker para procesarla.");
     }
-
-    $migracion->marcarInicio();
-    EjecutarMigracionJob::dispatch($id)->onQueue('migraciones');
-
-    $this->workerIniciado = false;
-    session()->flash('mensaje', "'{$migracion->nombre}' fue enviada a la cola. Iniciá el worker para procesarla.");
-    }
-
-    // =========================================================================
-    // Iniciar worker
-    // =========================================================================
 
     public function iniciarWorker(): void
     {
-        if (!$this->hayJobsPendientes()) {
-            $this->addError('worker', 'No hay migraciones en la cola.');
+        if ($this->workerActivo()) {
+            $this->addError('worker', 'El worker ya está corriendo.');
             return;
         }
 
@@ -75,27 +72,31 @@ class MigracionDashboard extends Component
         $php     = PHP_BINARY;
         $log     = storage_path('logs/worker.log');
 
-        // Ejecutar en background — el & hace que PHP no espere que termine
-        $comando = "{$php} {$artisan} queue:work --queue=migraciones --stop-when-empty >> {$log} 2>&1 &";
-        proc_close(proc_open($comando, [], $pipes));
+        $comando = "{$php} {$artisan} queue:work --queue=migraciones >> {$log} 2>&1 & echo $!";
+        $pid     = trim(shell_exec($comando));
 
-        $this->workerIniciado = true;
-        session()->flash('worker', 'Worker iniciado. La migración está procesándose en segundo plano.');
+        if ($pid) {
+            Cache::put('worker_pid', $pid, now()->addHours(8));
+            session()->flash('mensaje', 'Worker iniciado correctamente.');
+        }
     }
 
-    // =========================================================================
-
-
-    public function hydrate(): void
+    public function detenerWorker(): void
     {
-        // Si el worker terminó y no hay más jobs ni ejecuciones, resetear
-        if ($this->workerIniciado && !$this->hayJobsPendientes() && !$this->hayAlgunaEjecutando()) {
-            $this->workerIniciado = false;
+        $pid = Cache::get('worker_pid');
+
+        if (!$pid) {
+            $this->addError('worker', 'No hay worker corriendo.');
+            return;
         }
+
+        shell_exec("kill {$pid} 2>/dev/null");
+        Cache::forget('worker_pid');
+        session()->flash('mensaje', 'Worker detenido.');
     }
 
     public function render()
     {
-    return view('livewire.migracion-dashboard');
+        return view('livewire.migracion-dashboard');
     }
 }
