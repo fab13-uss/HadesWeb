@@ -8,11 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Livewire\Attributes\Layout;
-use Livewire\Attributes\Title;
 
-#[Layout('components.layouts.app')]
-#[Title('Matrícula Histórica')]
+
 class MatriculaHistorica extends Component
 {
     // Filtros

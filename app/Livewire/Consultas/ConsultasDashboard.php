@@ -3,7 +3,11 @@
 namespace App\Livewire\Consultas;
 
 use Livewire\Component;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 
+#[Layout('components.layouts.app')]
+#[Title('Consultas')]
 class ConsultasDashboard extends Component
 {
     public string $tabActiva = 'matricula-historica';
@@ -46,6 +50,6 @@ class ConsultasDashboard extends Component
         return view('livewire.consultas.dashboard', [
             'tabs'      => $this->tabs(),
             'tabActiva' => $this->tabActiva,
-        ])->title('Consultas');
+        ]);
     }
 }
