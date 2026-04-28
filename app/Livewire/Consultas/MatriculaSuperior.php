@@ -22,28 +22,36 @@ class MatriculaSuperior extends Component
     #[Computed]
     public function aniosDisponibles(): array
     {
-        $schemas = DB::select("
-            SELECT schema_name FROM information_schema.schemata
-            WHERE schema_name LIKE 'ra_carga%'
-            ORDER BY schema_name DESC
-        ");
-        return collect($schemas)
-            ->map(fn ($s) => (int) str_replace('ra_carga', '', $s->schema_name))
-            ->filter(fn ($a) => $a >= 2011)
-            ->values()
-            ->all();
+        try {
+            $schemas = DB::select("
+                SELECT schema_name FROM information_schema.schemata
+                WHERE schema_name LIKE 'ra_carga%'
+                ORDER BY schema_name DESC
+            ");
+            return collect($schemas)
+                ->map(fn ($s) => (int) str_replace('ra_carga', '', $s->schema_name))
+                ->filter(fn ($a) => $a >= 2011)
+                ->values()
+                ->all();
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     #[Computed]
     public function delegacionesZonales(): array
     {
-        return DB::table('padron.localizaciones')
-            ->whereNotNull('del_zonal')
-            ->where('del_zonal', '!=', '')
-            ->distinct()
-            ->orderBy('del_zonal')
-            ->pluck('del_zonal')
-            ->all();
+        try {
+            return DB::table('padron.localizaciones')
+                ->whereNotNull('del_zonal')
+                ->where('del_zonal', '!=', '')
+                ->distinct()
+                ->orderBy('del_zonal')
+                ->pluck('del_zonal')
+                ->all();
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public function consultar(): void
