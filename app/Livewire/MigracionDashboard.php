@@ -46,23 +46,18 @@ class MigracionDashboard extends Component
 
     public function ejecutar(int $id): void
     {
-        $migracion = MigracionEtl::findOrFail($id);
+    $migracion = MigracionEtl::findOrFail($id);
 
-        if ($this->hayAlgunaEjecutando()) {
-            $this->addError('general', 'Ya hay una migración en curso. Esperá que termine antes de iniciar otra.');
-            return;
-        }
+    if ($this->hayAlgunaEjecutando()) {
+        $this->addError('general', 'Ya hay una migración en curso. Esperá que termine antes de iniciar otra.');
+        return;
+    }
 
-        if (!$this->verificarConexion($migracion)) {
-            $this->addError("mig_{$id}", "La base de datos para '{$migracion->nombre}' aún no está disponible. ¿Tenés la VPN activa?");
-            return;
-        }
+    $migracion->marcarInicio();
+    EjecutarMigracionJob::dispatch($id)->onQueue('migraciones');
 
-        $migracion->marcarInicio();
-        EjecutarMigracionJob::dispatch($id)->onQueue('migraciones');
-
-        $this->workerIniciado = false;
-        session()->flash('mensaje', "'{$migracion->nombre}' fue enviada a la cola. Iniciá el worker para procesarla.");
+    $this->workerIniciado = false;
+    session()->flash('mensaje', "'{$migracion->nombre}' fue enviada a la cola. Iniciá el worker para procesarla.");
     }
 
     // =========================================================================
@@ -90,31 +85,6 @@ class MigracionDashboard extends Component
 
     // =========================================================================
 
-    private function verificarConexion(MigracionEtl $migracion): bool
-    {
-        try {
-            if ($migracion->comando === 'migrar:padron') {
-                DB::connection('nacion_padron')->getPdo();
-                return true;
-            }
-
-            if ($migracion->comando === 'migrar:ra-carga') {
-                $anio = $migracion->parametros['--anio'] ?? null;
-                if (!$anio) return false;
-
-                $base             = config('database.connections.nacion');
-                $base['database'] = "ra_carga{$anio}";
-                config(["database.connections.nacion_check_{$anio}" => $base]);
-                DB::connection("nacion_check_{$anio}")->getPdo();
-                DB::purge("nacion_check_{$anio}");
-                return true;
-            }
-
-            return true;
-        } catch (\Throwable) {
-            return false;
-        }
-    }
 
     public function hydrate(): void
     {
