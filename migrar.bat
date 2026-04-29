@@ -7,7 +7,7 @@ echo.
 echo Asegurate de tener la VPN activa antes de continuar.
 echo.
 cd /d %~dp0
-php artisan queue:work --queue=migraciones --stop-when-empty
+php artisan queue:work --queue=migraciones --stop-when-empty --env=railway
 echo.
 echo Worker finalizado.
 pause
