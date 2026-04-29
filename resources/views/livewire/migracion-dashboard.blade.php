@@ -52,35 +52,52 @@
     @enderror
 
     {{-- Worker --}}
-    @if($this->workerActivo())
+@if($this->workerActivo())
     <div class="rounded-xl border border-green-200 bg-green-50 dark:bg-green-900/20 p-4 flex items-center justify-between">
         <div class="flex items-center gap-3">
             <span class="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse"></span>
             <div>
                 <p class="text-sm font-medium text-green-800 dark:text-green-300">Worker activo</p>
-                <p class="text-xs text-green-600 dark:text-green-400 mt-0.5">Procesando la cola de migraciones</p>
+                <p class="text-xs text-green-600 dark:text-green-400 mt-0.5">Procesando migraciones en cola</p>
             </div>
         </div>
         <button
             wire:click="detenerWorker"
-            wire:confirm="¿Detener el worker? Las migraciones en curso pueden quedar incompletas."
+            wire:confirm="¿Detener el worker?"
             class="rounded-lg px-4 py-2 text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition"
         >
             Detener worker
         </button>
     </div>
 @else
-    <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 p-4 flex items-center justify-between">
-        <div>
-            <p class="text-sm font-medium text-zinc-800 dark:text-zinc-200">Worker detenido</p>
-            <p class="text-xs text-zinc-500 mt-0.5">Inicialo para procesar migraciones en cola</p>
+    <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 p-4 space-y-3">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-zinc-800 dark:text-zinc-200">Worker detenido</p>
+                <p class="text-xs text-zinc-500 mt-0.5">
+                    Necesario para procesar migraciones en cola
+                </p>
+            </div>
+            <button
+                wire:click="iniciarWorker"
+                class="rounded-lg px-4 py-2 text-sm font-medium bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 transition"
+            >
+                Iniciar worker
+            </button>
         </div>
-        <button
-            wire:click="iniciarWorker"
-            class="rounded-lg px-4 py-2 text-sm font-medium bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 transition"
-        >
-            Iniciar worker
-        </button>
+
+        {{-- Instrucciones para ra_carga --}}
+        <div class="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 p-3">
+            <p class="text-xs font-medium text-blue-800 dark:text-blue-300 mb-1">
+                Para migrar Relevamientos Anuales (ra_carga):
+            </p>
+            <ol class="text-xs text-blue-700 dark:text-blue-400 space-y-1 list-decimal list-inside">
+                <li>Activá la VPN</li>
+                <li>Hacé clic en <strong>Ejecutar</strong> en el relevamiento que querés migrar</li>
+                <li>Corré <code class="bg-blue-100 dark:bg-blue-900 px-1 rounded font-mono">migrar.bat</code> en tu computadora</li>
+                <li>Esperá que termine y cerrá el CMD</li>
+            </ol>
+        </div>
     </div>
 @endif
 
