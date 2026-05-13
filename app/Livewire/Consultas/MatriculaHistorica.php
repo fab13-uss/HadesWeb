@@ -9,7 +9,6 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-
 class MatriculaHistorica extends Component
 {
     // Filtros
@@ -19,10 +18,15 @@ class MatriculaHistorica extends Component
     public string $busqueda             = '';
     public string $estado               = 'ACTIVO';
 
+    // Paginación
+    public int    $pagina    = 1;
+    public int    $porPagina = 100;
+    public int    $total     = 0;
+
     // Estado UI
-    public bool  $consultado = false;
-    public array $resultados = [];
-    public ?string $error    = null;
+    public bool    $consultado = false;
+    public array   $resultados = [];
+    public ?string $error      = null;
 
     // =========================================================================
     // Datos para los selects
@@ -75,7 +79,19 @@ class MatriculaHistorica extends Component
 
     public function consultar(): void
     {
-        $this->error     = null;
+        $this->pagina = 1;
+        $this->ejecutarConsulta();
+    }
+
+    public function cambiarPagina(int $pagina): void
+    {
+        $this->pagina = $pagina;
+        $this->ejecutarConsulta();
+    }
+
+    private function ejecutarConsulta(): void
+    {
+        $this->error      = null;
         $this->resultados = [];
         $this->consultado = false;
 
@@ -98,8 +114,14 @@ class MatriculaHistorica extends Component
                 estado:   $this->estado,
             );
 
-            $filas = $builder->ejecutar();
-            $this->resultados = array_map(fn ($f) => (array) $f, $filas);
+            $todasLasFilas    = array_map(fn ($f) => (array) $f, $builder->ejecutar());
+            $this->total      = count($todasLasFilas);
+            $this->resultados = array_slice(
+                $todasLasFilas,
+                max(0, ($this->pagina - 1) * $this->porPagina),
+                $this->porPagina,
+                true
+            );
             $this->consultado = true;
 
         } catch (\Throwable $e) {
@@ -117,73 +139,82 @@ class MatriculaHistorica extends Component
         $this->resultados           = [];
         $this->consultado           = false;
         $this->error                = null;
+        $this->pagina               = 1;
+        $this->total                = 0;
+    }
+
+    public function totalPaginas(): int
+    {
+        return (int) ceil($this->total / $this->porPagina);
     }
 
     public function exportarExcel(): StreamedResponse
-{
-    $anios   = array_map('intval', $this->aniosSeleccionados);
-    $ofertas = array_map('intval', $this->ofertasSeleccionadas);
+    {
+        $anios   = array_map('intval', $this->aniosSeleccionados);
+        $ofertas = array_map('intval', $this->ofertasSeleccionadas);
 
-    return response()->streamDownload(function () use ($anios, $ofertas) {
+        $builder = new MatriculaQueryBuilder(
+            anios:    $anios,
+            ofertas:  $ofertas,
+            delZonal: $this->delZonal ?: null,
+            busqueda: $this->busqueda ?: null,
+            estado:   $this->estado,
+        );
 
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-        $sheet       = $spreadsheet->getActiveSheet();
+        $todasLasFilas = array_map(fn ($f) => (array) $f, $builder->ejecutar());
 
-        // ── Cabecera ──
-        $cabecera = [
-            'Delegación Zonal', 'CUE Anexo', 'Nombre',
-            'Oferta', 'Descripción Oferta', 'Modalidad', 'Estado',
-        ];
-        foreach ($anios as $anio) {
-            $cabecera[] = "Matrícula {$anio}";
-            $cabecera[] = "Varones {$anio}";
-        }
-        $sheet->fromArray($cabecera, null, 'A1');
+        return response()->streamDownload(function () use ($todasLasFilas, $anios) {
 
-        // Estilo de cabecera
-        $ultimaCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($cabecera));
-        $sheet->getStyle("A1:{$ultimaCol}1")->applyFromArray([
-            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '4F46E5']],
-        ]);
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet       = $spreadsheet->getActiveSheet();
 
-        // ── Filas ──
-        $fila = 2;
-        foreach ($this->resultados as $registro) {
-            $row = [
-                $registro['del_zonal']         ?? '',
-                $registro['cueanexo']           ?? '',
-                $registro['nombre']             ?? '',
-                $registro['c_oferta']           ?? '',
-                $registro['descripcion_oferta'] ?? '',
-                $registro['modalidad']          ?? '',
-                $registro['estado']             ?? '',
+            $cabecera = [
+                'Delegación Zonal', 'CUE Anexo', 'Nombre',
+                'Oferta', 'Descripción Oferta', 'Modalidad', 'Estado',
             ];
             foreach ($anios as $anio) {
-                $row[] = $registro["matricula_{$anio}"] ?? '';
-                $row[] = $registro["varones_{$anio}"]   ?? '';
+                $cabecera[] = "Matrícula {$anio}";
+                $cabecera[] = "Varones {$anio}";
             }
-            $sheet->fromArray($row, null, "A{$fila}");
-            $fila++;
-        }
+            $sheet->fromArray($cabecera, null, 'A1');
 
-        // Ancho automático de columnas
-        foreach (range(1, count($cabecera)) as $col) {
-            $sheet->getColumnDimensionByColumn($col)->setAutoSize(true);
-        }
+            $ultimaCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($cabecera));
+            $sheet->getStyle("A1:{$ultimaCol}1")->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '4F46E5']],
+            ]);
 
-        // Freezar la primera fila
-        $sheet->freezePane('A2');
+            $fila = 2;
+            foreach ($todasLasFilas as $registro) {
+                $row = [
+                    $registro['del_zonal']         ?? '',
+                    $registro['cueanexo']           ?? '',
+                    $registro['nombre']             ?? '',
+                    $registro['c_oferta']           ?? '',
+                    $registro['descripcion_oferta'] ?? '',
+                    $registro['modalidad']          ?? '',
+                    $registro['estado']             ?? '',
+                ];
+                foreach ($anios as $anio) {
+                    $row[] = $registro["matricula_{$anio}"] ?? '';
+                    $row[] = $registro["varones_{$anio}"]   ?? '';
+                }
+                $sheet->fromArray($row, null, "A{$fila}");
+                $fila++;
+            }
 
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-        $writer->save('php://output');
+            foreach (range(1, count($cabecera)) as $col) {
+                $sheet->getColumnDimensionByColumn($col)->setAutoSize(true);
+            }
+            $sheet->freezePane('A2');
 
-    }, 'matricula_historica_' . date('Ymd_His') . '.xlsx', [
-        'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    ]);
-}
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
 
-    // =========================================================================
+        }, 'matricula_historica_' . date('Ymd_His') . '.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
 
     public function render()
     {
