@@ -244,4 +244,56 @@
         </div>
     @endif
 
+    {{-- Paginación --}}
+                @if($totalPaginas() > 1)
+                    <div class="flex items-center justify-between mt-4">
+                        <p class="text-xs text-gray-500">
+                            Página {{ $pagina }} de {{ $totalPaginas() }}
+                        </p>
+                        <div class="flex items-center gap-1">
+                            <button
+                                wire:click="cambiarPagina(1)"
+                                @disabled($pagina === 1)
+                                class="rounded px-2 py-1 text-xs {{ $pagina === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
+                            >«</button>
+
+                            <button
+                                wire:click="cambiarPagina({{ $pagina - 1 }})"
+                                @disabled($pagina === 1)
+                                class="rounded px-2 py-1 text-xs {{ $pagina === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
+                            >‹</button>
+
+                            @foreach(range(max(1, $pagina - 2), min($totalPaginas(), $pagina + 2)) as $p)
+                                <button
+                                    wire:click="cambiarPagina({{ $p }})"
+                                    class="rounded px-2.5 py-1 text-xs font-medium
+                                        {{ $p === $pagina
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
+                                >{{ $p }}</button>
+                            @endforeach
+
+                            <button
+                                wire:click="cambiarPagina({{ $pagina + 1 }})"
+                                @disabled($pagina === $totalPaginas())
+                                class="rounded px-2 py-1 text-xs {{ $pagina === $totalPaginas() ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
+                            >›</button>
+
+                            <button
+                                wire:click="cambiarPagina({{ $totalPaginas() }})"
+                                @disabled($pagina === $totalPaginas())
+                                class="rounded px-2 py-1 text-xs {{ $pagina === $totalPaginas() ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
+                            >»</button>
+                        </div>
+                    </div>
+                @endif
+
+            @else
+                <div class="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
+                    <p class="text-sm text-gray-400">No se encontraron registros con los filtros seleccionados.</p>
+                </div>
+            @endif
+        </div>
+    @endif
+
 </div>

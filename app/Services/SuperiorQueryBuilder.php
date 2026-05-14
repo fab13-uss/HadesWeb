@@ -4,126 +4,253 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
 
-class SuperiorQueryBuilder
+class MatriculaQueryBuilder
 {
     private array $tablasExistentes = [];
+    private array $joinsAgregados   = [];
 
     public function __construct(
         private array   $anios,
+        private array   $ofertas,
         private ?string $delZonal,
         private ?string $busqueda,
-        private ?string $tipoFormacion,
+        private string  $estado,
     ) {}
 
     public function ejecutar(): array
     {
-        [$sql, $bindings] = $this->construirSQL();
-        return DB::select($sql, $bindings);
+        return DB::select($this->construirSQL());
     }
 
-    private function construirSQL(): array
+    public function ejecutarPaginado(int $pagina, int $porPagina): array
     {
-        $unionParts = [];
+        $offset = ($pagina - 1) * $porPagina;
+        $sql    = $this->construirSQL() . " LIMIT {$porPagina} OFFSET {$offset}";
+        return DB::select($sql);
+    }
 
-        foreach ($this->anios as $anio) {
-            // 🔐 VALIDACIÓN IMPORTANTE
-            if (!is_numeric($anio)) {
-                continue;
-            }
+    public function contarTotal(): int
+    {
+        $baseUE = $this->sqlBaseUnidadesEducativas();
+        $where  = $this->sqlWherePrincipal();
+        $sql    = "SELECT COUNT(*) as total FROM ({$baseUE}) ue {$where}";
+        return (int) (DB::select($sql)[0]->total ?? 0);
+    }
 
-            $schema = "ra_carga{$anio}";
+    public function getSql(): string
+    {
+        return $this->construirSQL();
+    }
 
-            if (!$this->tablaExiste($schema, 'Verde_287')) {
-                continue;
-            }
+    private function construirSQL(): string
+    {
+        $baseUE   = $this->sqlBaseUnidadesEducativas();
+        $joins    = $this->sqlJoins();
+        $columnas = $this->sqlColumnasMatricula();
+        $where    = $this->sqlWherePrincipal();
+        $orderBy  = "ORDER BY ue.del_zonal, ue.cueanexo, ue.c_oferta";
 
-            $unionParts[] = "
-                SELECT id_localizacion, {$anio} AS anio, plan_estudio_titulo, tipo_formacion, total
-                FROM \"{$schema}\".\"Verde_287\"
+        return "
+            SELECT
+                ue.del_zonal,
+                ue.cueanexo,
+                ue.nombre,
+                ue.c_oferta,
+                ue.descripcion_oferta,
+                ue.modalidad,
+                ue.estado
+                {$columnas}
+            FROM (
+                {$baseUE}
+            ) ue
+            {$joins}
+            {$where}
+            {$orderBy}
+        ";
+    }
+
+    private function sqlBaseUnidadesEducativas(): string
+    {
+        $excluidos     = implode(',', MatriculaConfig::EXCLUIR_OFERTA_LOCAL);
+        $ofertasNormal = array_diff($this->ofertas, MatriculaConfig::OFERTAS_CON_GROUPBY);
+        $ofertasGrupo  = array_intersect($this->ofertas, MatriculaConfig::OFERTAS_CON_GROUPBY);
+
+        $parts = [];
+
+        if (!empty($ofertasNormal)) {
+            $lista       = implode(',', $ofertasNormal);
+            $estadoWhere = $this->estado !== 'TODOS'
+                ? "AND oloc.estado = '{$this->estado}'"
+                : '';
+
+            $parts[] = "
+                SELECT oloc.id_localizacion, loc.cue || loc.anexo AS cueanexo,
+                       oloc.c_oferta, oloc.descripcion_oferta, oloc.modalidad,
+                       loc.nombre, loc.del_zonal, oloc.estado
+                FROM padron.oferta_local oloc
+                INNER JOIN padron.localizaciones loc ON loc.id_localizacion = oloc.id_localizacion
+                WHERE oloc.c_oferta IN ({$lista})
+                  AND oloc.id_oferta_local NOT IN ({$excluidos})
+                  {$estadoWhere}
             ";
         }
 
-        if (empty($unionParts)) {
-            return ["SELECT NULL::integer AS del_zonal WHERE false", []];
+        if (!empty($ofertasGrupo)) {
+            $lista = implode(',', $ofertasGrupo);
+            $parts[] = "
+                SELECT oloc.id_localizacion, loc.cue || loc.anexo AS cueanexo,
+                       oloc.c_oferta, oloc.descripcion_oferta, oloc.modalidad,
+                       loc.nombre, loc.del_zonal, 'ACTIVO' AS estado
+                FROM padron.oferta_local oloc
+                INNER JOIN padron.localizaciones loc ON loc.id_localizacion = oloc.id_localizacion
+                WHERE oloc.estado = 'ACTIVO'
+                  AND oloc.c_oferta IN ({$lista})
+                GROUP BY oloc.id_localizacion, loc.cue, loc.anexo, oloc.c_oferta,
+                         oloc.descripcion_oferta, oloc.modalidad, loc.nombre, loc.del_zonal
+            ";
         }
 
-        $unionSQL = implode("\nUNION ALL\n", $unionParts);
-
-        [$where, $bindings] = $this->sqlWhere();
-
-        $sql = "
-            WITH oferta_base AS (
-                SELECT loc.id_localizacion, loc.del_zonal,
-                       loc.cue || loc.anexo AS cueanexo,
-                       loc.nombre, oloc.c_oferta, oloc.modalidad
-                FROM padron.oferta_local oloc
-                LEFT JOIN padron.localizaciones loc ON oloc.id_localizacion = loc.id_localizacion
-                WHERE oloc.c_oferta = 115
-                  AND oloc.estado = 'ACTIVO'
-            ),
-            mat_sup AS (
-                {$unionSQL}
-            )
-            SELECT
-                ob.del_zonal,
-                ob.cueanexo,
-                ob.nombre,
-                ob.c_oferta,
-                ob.modalidad,
-                ms.anio,
-                ms.plan_estudio_titulo,
-                ms.tipo_formacion,
-                ms.total
-            FROM oferta_base ob
-            LEFT JOIN mat_sup ms ON ms.id_localizacion = ob.id_localizacion
-            {$where}
-            ORDER BY ob.del_zonal, ob.cueanexo, ms.anio, ms.plan_estudio_titulo
-        ";
-
-        return [$sql, $bindings];
+        return implode("\nUNION ALL\n", $parts);
     }
 
-    private function sqlWhere(): array
+    private function sqlJoins(): string
     {
-        $condiciones = [];
-        $bindings = [];
+        $joins = [];
 
-        if (!empty($this->delZonal)) {
-            $condiciones[] = "ob.del_zonal = ?";
-            $bindings[] = $this->delZonal;
+        foreach ($this->anios as $anio) {
+            foreach ($this->ofertas as $cOferta) {
+                $def = MatriculaConfig::OFERTAS[$cOferta] ?? null;
+                if (!$def) continue;
+
+                $alias  = "mat{$anio}_{$cOferta}";
+                $schema = "ra_carga{$anio}";
+
+                $tablasRequeridas = !empty($def['es_union'])
+                    ? $def['tablas']
+                    : [$def['tabla']];
+
+                $todasExisten = collect($tablasRequeridas)
+                    ->every(fn ($t) => $this->tablaExiste($schema, $t));
+
+                if (!$todasExisten) {
+                    continue;
+                }
+
+                $this->joinsAgregados["{$anio}_{$cOferta}"] = true;
+
+                $subquery = $this->sqlSubqueryMatricula($schema, $def);
+
+                $joins[] = "LEFT JOIN ({$subquery}) {$alias}
+                    ON {$alias}.id_localizacion = ue.id_localizacion
+                    AND ue.c_oferta = {$cOferta}";
+            }
         }
 
-        if (!empty($this->busqueda)) {
-            $condiciones[] = "(ob.nombre ILIKE ? OR ob.cueanexo ILIKE ?)";
-            $bindings[] = "%{$this->busqueda}%";
-            $bindings[] = "%{$this->busqueda}%";
-        }
-
-        if (!empty($this->tipoFormacion)) {
-            $condiciones[] = "ms.tipo_formacion ILIKE ?";
-            $bindings[] = "%{$this->tipoFormacion}%";
-        }
-
-        $where = empty($condiciones)
-            ? ''
-            : 'WHERE ' . implode(' AND ', $condiciones);
-
-        return [$where, $bindings];
+        return implode("\n", $joins);
     }
 
     private function tablaExiste(string $schema, string $tabla): bool
     {
         $key = "{$schema}.{$tabla}";
-
         if (!isset($this->tablasExistentes[$key])) {
             $res = DB::select("
                 SELECT 1 FROM information_schema.tables
                 WHERE table_schema = ? AND table_name = ? LIMIT 1
             ", [$schema, $tabla]);
-
             $this->tablasExistentes[$key] = !empty($res);
         }
-
         return $this->tablasExistentes[$key];
+    }
+
+    private function sqlSubqueryMatricula(string $schema, array $def): string
+    {
+        $colTotal   = $def['col_total']   ?? 'total';
+        $colVarones = $def['col_varones'] ?? 'varones';
+
+        if (!empty($def['es_union'])) {
+            $unionParts = array_map(fn ($tabla) =>
+                "SELECT id_localizacion, SUM({$colTotal}) AS total, SUM({$colVarones}) AS varones
+                 FROM \"{$schema}\".\"{$tabla}\" GROUP BY id_localizacion",
+                $def['tablas']
+            );
+            $union = implode("\nUNION ALL\n", $unionParts);
+            return "
+                SELECT id_localizacion,
+                       SUM(total) AS matricula,
+                       SUM(varones) AS varones
+                FROM ({$union}) _u
+                GROUP BY id_localizacion
+            ";
+        }
+
+        $tabla     = $def['tabla'];
+        $filtroSQL = '';
+
+        if (!empty($def['filtro_fila'])) {
+            [$columna, $operador, $valores] = $def['filtro_fila'];
+            $filtroSQL = match ($operador) {
+                'in'       => "WHERE {$columna} IN (" . implode(',', array_map(fn ($v) => "'{$v}'", $valores)) . ")",
+                'not_in'   => "WHERE {$columna} NOT IN (" . implode(',', array_map(fn ($v) => "'{$v}'", $valores)) . ")",
+                'not_like' => "WHERE {$columna} NOT ILIKE '{$valores}'",
+                default    => '',
+            };
+        }
+
+        return "
+            SELECT id_localizacion,
+                   SUM({$colTotal}) AS matricula,
+                   SUM({$colVarones}) AS varones
+            FROM \"{$schema}\".\"{$tabla}\"
+            {$filtroSQL}
+            GROUP BY id_localizacion
+        ";
+    }
+
+    private function sqlColumnasMatricula(): string
+    {
+        $cols = '';
+
+        foreach ($this->anios as $anio) {
+            $caseMatricula = "CASE\n";
+            $caseVarones   = "CASE\n";
+
+            foreach ($this->ofertas as $cOferta) {
+                if (!isset($this->joinsAgregados["{$anio}_{$cOferta}"])) {
+                    continue;
+                }
+                $alias = "mat{$anio}_{$cOferta}";
+                $caseMatricula .= "    WHEN ue.c_oferta = {$cOferta} THEN {$alias}.matricula\n";
+                $caseVarones   .= "    WHEN ue.c_oferta = {$cOferta} THEN {$alias}.varones\n";
+            }
+
+            $caseMatricula .= "    ELSE NULL END AS \"matricula_{$anio}\"";
+            $caseVarones   .= "    ELSE NULL END AS \"varones_{$anio}\"";
+
+            $cols .= ",\n{$caseMatricula}";
+            $cols .= ",\n{$caseVarones}";
+        }
+
+        return $cols;
+    }
+
+    private function sqlWherePrincipal(): string
+    {
+        $condiciones = [];
+
+        if ($this->delZonal) {
+            $dz = addslashes($this->delZonal);
+            $condiciones[] = "ue.del_zonal = '{$dz}'";
+        }
+
+        if ($this->busqueda) {
+            $b = addslashes($this->busqueda);
+            $condiciones[] = "(ue.nombre ILIKE '%{$b}%' OR ue.cueanexo ILIKE '%{$b}%')";
+        }
+
+        if ($this->estado !== 'TODOS') {
+            $condiciones[] = "ue.estado = '{$this->estado}'";
+        }
+
+        return empty($condiciones) ? '' : 'WHERE ' . implode(' AND ', $condiciones);
     }
 }
