@@ -85,7 +85,7 @@ class MatriculaHistorica extends Component
 
     public function cambiarPagina(int $pagina): void
     {
-        $this->pagina = $pagina;
+        $this->pagina = max(1, min($pagina, $this->totalPaginas()));
         $this->ejecutarConsulta();
     }
 

@@ -156,144 +156,138 @@
     @endif
 
     {{-- Resultados --}}
-    @if($consultado)
-        <div>
+@if($consultado)
+    <div>
 
-            <div class="flex items-center justify-between mb-3">
-                <p class="text-sm text-zinc-500">
-                    {{ number_format(count($resultados)) }} registros
-                </p>
-            </div>
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-sm text-zinc-500">
+                {{ number_format(count($resultados)) }} registros
+            </p>
+        </div>
 
-            @if(count($resultados) > 0)
-                <div class="overflow-x-auto rounded-xl border bg-white dark:bg-zinc-900 dark:border-zinc-700">
+        @if(count($resultados) > 0)
+            <div class="overflow-x-auto rounded-xl border bg-white dark:bg-zinc-900 dark:border-zinc-700">
 
-                    <table class="min-w-full text-xs">
-                        <thead class="bg-zinc-50 dark:bg-zinc-800 sticky top-0">
-                            <tr>
-                                <th class="px-3 py-2 text-left text-zinc-500">Delegación</th>
-                                <th class="px-3 py-2 text-left text-zinc-500">CUE</th>
-                                <th class="px-3 py-2 text-left text-zinc-500">Nombre</th>
-                                <th class="px-3 py-2 text-left text-zinc-500">Oferta</th>
-                                <th class="px-3 py-2 text-left text-zinc-500">Modalidad</th>
-                                <th class="px-3 py-2 text-left text-zinc-500">Estado</th>
+                <table class="min-w-full text-xs">
+                    <thead class="bg-zinc-50 dark:bg-zinc-800 sticky top-0">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-zinc-500">Delegación</th>
+                            <th class="px-3 py-2 text-left text-zinc-500">CUE</th>
+                            <th class="px-3 py-2 text-left text-zinc-500">Nombre</th>
+                            <th class="px-3 py-2 text-left text-zinc-500">Oferta</th>
+                            <th class="px-3 py-2 text-left text-zinc-500">Modalidad</th>
+                            <th class="px-3 py-2 text-left text-zinc-500">Estado</th>
+
+                            @foreach(array_map('intval', $aniosSeleccionados) as $anio)
+                                <th class="px-3 py-2 text-right text-zinc-500 bg-zinc-100 dark:bg-zinc-700">
+                                    {{ $anio }}
+                                </th>
+                            @endforeach
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y dark:divide-zinc-700">
+                        @foreach($resultados as $fila)
+                            <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800">
+
+                                <td class="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                                    {{ $fila['del_zonal'] ?? '—' }}
+                                </td>
+
+                                <td class="px-3 py-2 font-mono text-zinc-700">
+                                    {{ $fila['cueanexo'] ?? '' }}
+                                </td>
+
+                                <td class="px-3 py-2 text-zinc-700 truncate max-w-xs">
+                                    {{ $fila['nombre'] ?? '' }}
+                                </td>
+
+                                <td class="px-3 py-2 text-zinc-500">
+                                    {{ $fila['descripcion_oferta'] ?? '' }}
+                                </td>
+
+                                <td class="px-3 py-2 text-zinc-500">
+                                    {{ $fila['modalidad'] ?? '' }}
+                                </td>
+
+                                <td class="px-3 py-2">
+                                    <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium
+                                        {{ ($fila['estado'] ?? '') === 'ACTIVO'
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                                            : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400' }}">
+                                        {{ $fila['estado'] ?? '' }}
+                                    </span>
+                                </td>
 
                                 @foreach(array_map('intval', $aniosSeleccionados) as $anio)
-                                    <th class="px-3 py-2 text-right text-zinc-500 bg-zinc-100 dark:bg-zinc-700">
-                                        {{ $anio }}
-                                    </th>
+                                    <td class="px-3 py-2 text-right tabular-nums text-zinc-800 dark:text-zinc-200">
+                                        {{ $fila["matricula_{$anio}"] !== null ? number_format($fila["matricula_{$anio}"]) : '—' }}
+                                    </td>
                                 @endforeach
+
                             </tr>
-                        </thead>
+                        @endforeach
+                    </tbody>
+                </table>
 
-                        <tbody class="divide-y dark:divide-zinc-700">
+            </div>
 
-                            @foreach($resultados as $fila)
-                                <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800">
-
-                                    <td class="px-3 py-2 text-zinc-700 dark:text-zinc-300">
-                                        {{ $fila['del_zonal'] ?? '—' }}
-                                    </td>
-
-                                    <td class="px-3 py-2 font-mono text-zinc-700">
-                                        {{ $fila['cueanexo'] ?? '' }}
-                                    </td>
-
-                                    <td class="px-3 py-2 text-zinc-700 truncate max-w-xs">
-                                        {{ $fila['nombre'] ?? '' }}
-                                    </td>
-
-                                    <td class="px-3 py-2 text-zinc-500">
-                                        {{ $fila['descripcion_oferta'] ?? '' }}
-                                    </td>
-
-                                    <td class="px-3 py-2 text-zinc-500">
-                                        {{ $fila['modalidad'] ?? '' }}
-                                    </td>
-
-                                    <td class="px-3 py-2">
-                                        <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium
-                                            {{ ($fila['estado'] ?? '') === 'ACTIVO'
-                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-                                                : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400' }}">
-                                            {{ $fila['estado'] ?? '' }}
-                                        </span>
-                                    </td>
-
-                                    @foreach(array_map('intval', $aniosSeleccionados) as $anio)
-                                        <td class="px-3 py-2 text-right tabular-nums text-zinc-800 dark:text-zinc-200">
-                                            {{ $fila["matricula_{$anio}"] !== null ? number_format($fila["matricula_{$anio}"]) : '—' }}
-                                        </td>
-                                    @endforeach
-
-                                </tr>
-                            @endforeach
-
-                        </tbody>
-                    </table>
-
-                </div>
-            @else
-                <div class="rounded-xl border bg-white dark:bg-zinc-900 dark:border-zinc-700 px-6 py-12 text-center">
-                    <p class="text-sm text-zinc-400">
-                        No se encontraron resultados
+            {{-- Paginación --}}
+            @if($this->totalPaginas() > 1)
+                <div class="flex items-center justify-between mt-4">
+                    <p class="text-xs text-gray-500">
+                        Página {{ $pagina }} de {{ $this->totalPaginas() }}
                     </p>
-                </div>
-            @endif
 
-        </div>
-    @endif
+                    <div class="flex items-center gap-1">
 
-    {{-- Paginación --}}
-                @if($totalPaginas() > 1)
-                    <div class="flex items-center justify-between mt-4">
-                        <p class="text-xs text-gray-500">
-                            Página {{ $pagina }} de {{ $totalPaginas() }}
-                        </p>
-                        <div class="flex items-center gap-1">
+                        <button
+                            wire:click="cambiarPagina(1)"
+                            @disabled($pagina === 1)
+                            class="rounded px-2 py-1 text-xs {{ $pagina === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
+                        >«</button>
+
+                        <button
+                            wire:click="cambiarPagina({{ max($pagina - 1, 1) }})"
+                            @disabled($pagina === 1)
+                            class="rounded px-2 py-1 text-xs {{ $pagina === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
+                        >‹</button>
+
+                        @foreach(range(max(1, $pagina - 2), min($this->totalPaginas(), $pagina + 2)) as $p)
                             <button
-                                wire:click="cambiarPagina(1)"
-                                @disabled($pagina === 1)
-                                class="rounded px-2 py-1 text-xs {{ $pagina === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
-                            >«</button>
+                                wire:click="cambiarPagina({{ $p }})"
+                                class="rounded px-2.5 py-1 text-xs font-medium
+                                    {{ $p === $pagina
+                                        ? 'bg-indigo-600 text-white'
+                                        : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
+                            >{{ $p }}</button>
+                        @endforeach
 
-                            <button
-                                wire:click="cambiarPagina({{ $pagina - 1 }})"
-                                @disabled($pagina === 1)
-                                class="rounded px-2 py-1 text-xs {{ $pagina === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
-                            >‹</button>
+                        <button
+                            wire:click="cambiarPagina({{ min($pagina + 1, $this->totalPaginas()) }})"
+                            @disabled($pagina === $this->totalPaginas())
+                            class="rounded px-2 py-1 text-xs {{ $pagina === $this->totalPaginas() ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
+                        >›</button>
 
-                            @foreach(range(max(1, $pagina - 2), min($totalPaginas(), $pagina + 2)) as $p)
-                                <button
-                                    wire:click="cambiarPagina({{ $p }})"
-                                    class="rounded px-2.5 py-1 text-xs font-medium
-                                        {{ $p === $pagina
-                                            ? 'bg-indigo-600 text-white'
-                                            : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
-                                >{{ $p }}</button>
-                            @endforeach
+                        <button
+                            wire:click="cambiarPagina({{ $this->totalPaginas() }})"
+                            @disabled($pagina === $this->totalPaginas())
+                            class="rounded px-2 py-1 text-xs {{ $pagina === $this->totalPaginas() ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
+                        >»</button>
 
-                            <button
-                                wire:click="cambiarPagina({{ $pagina + 1 }})"
-                                @disabled($pagina === $totalPaginas())
-                                class="rounded px-2 py-1 text-xs {{ $pagina === $totalPaginas() ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
-                            >›</button>
-
-                            <button
-                                wire:click="cambiarPagina({{ $totalPaginas() }})"
-                                @disabled($pagina === $totalPaginas())
-                                class="rounded px-2 py-1 text-xs {{ $pagina === $totalPaginas() ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
-                            >»</button>
-                        </div>
                     </div>
-                @endif
-
-            @else
-                <div class="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-6 py-12 text-center">
-                    <p class="text-sm text-gray-400">No se encontraron registros con los filtros seleccionados.</p>
                 </div>
             @endif
-        </div>
-    @endif
+
+        @else
+            <div class="rounded-xl border bg-white dark:bg-zinc-900 dark:border-zinc-700 px-6 py-12 text-center">
+                <p class="text-sm text-zinc-400">
+                    No se encontraron resultados
+                </p>
+            </div>
+        @endif
+
+    </div>
+@endif
 
 </div>
