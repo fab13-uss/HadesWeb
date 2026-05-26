@@ -144,13 +144,13 @@
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
                         <input type="text" wire:model="nombre"
-                            class="w-full text-sm rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
+                            class="w-full text-sm rounded-md border border-gray-400 bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white">
                         @error('nombre') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Apellido</label>
                         <input type="text" wire:model="apellido"
-                            class="w-full text-sm rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
+                            class="w-full text-sm rounded-md border border-gray-400 bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white">
                         @error('apellido') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
@@ -158,7 +158,7 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Nombre de usuario</label>
                     <input type="text" wire:model="username"
-                        class="w-full text-sm rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
+                        class="w-full text-sm rounded-md border border-gray-400 bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white">
                     @error('username') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
@@ -168,14 +168,14 @@
                         <span class="text-gray-400 font-normal">(opcional, para recuperación de contraseña)</span>
                     </label>
                     <input type="email" wire:model="email"
-                        class="w-full text-sm rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
+                        class="w-full text-sm rounded-md border border-gray-400 bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white">
                     @error('email') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Rol</label>
                     <select wire:model="rol"
-                        class="w-full text-sm rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
+                        class="w-full text-sm rounded-md border border-gray-400 bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white">
                         <option value="profesor">Profesor</option>
                         <option value="tecnico">Técnico</option>
                     </select>
@@ -189,13 +189,13 @@
                         @endif
                     </label>
                     <input type="password" wire:model="password"
-                        class="w-full text-sm rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
+                        class="w-full text-sm rounded-md border border-gray-400 bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white">
                     @error('password') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="flex justify-end gap-3 pt-2">
                     <button wire:click="cerrarModal"
-                        class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        class="rounded-md border border-gray-400 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                         Cancelar
                     </button>
                     <button
